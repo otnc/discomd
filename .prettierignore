@@ -1,0 +1,12 @@
+dist
+coverage
+scripts
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+bun.lock
+*.md
+
+# Contain unexpanded <setup-steps> / <pm> placeholders until `npm run setup`
+# runs, which makes them invalid YAML.
+.github/
