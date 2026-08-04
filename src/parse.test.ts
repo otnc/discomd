@@ -203,6 +203,39 @@ describe("parse", () => {
     ]);
   });
 
+  it("trims padding around a link target", () => {
+    for (const text of [
+      "[a]( https://x.com)",
+      "[a](https://x.com )",
+      "[a]( https://x.com )",
+      "[a](\thttps://x.com\t)",
+      "[a]( <https://x.com> )",
+    ]) {
+      const tokens = parse(text);
+      assertPartition(text, tokens);
+      expect(tokens).toEqual([
+        expect.objectContaining({
+          element: "link",
+          content: "a",
+          url: "https://x.com",
+        }),
+      ]);
+    }
+  });
+
+  it("does not read a link from an empty, unpadded or space-broken target", () => {
+    for (const text of [
+      "[a]()", // no target at all
+      "[a](  )", // padding only
+      "[a] (https://x.com)", // `]` and `(` must be adjacent
+      "[a](https://x.com/one two)", // a bare target cannot contain whitespace
+    ]) {
+      const tokens = parse(text);
+      assertPartition(text, tokens);
+      expect(tokens.some((t) => t.element === "link")).toBe(false);
+    }
+  });
+
   it("tags suppressed embed links", () => {
     const tokens = parse("<https://discord.com>");
     assertPartition("<https://discord.com>", tokens);
