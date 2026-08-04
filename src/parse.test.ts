@@ -84,7 +84,7 @@ describe("parse", () => {
     const codeBlocks = tokens.filter((t) => t.element === "codeBlock");
     expect(codeBlocks[0]).toMatchObject({
       lang: "js",
-      content: "const a = 1;\n",
+      content: "const a = 1;",
     });
     expect(codeBlocks[1]).toMatchObject({ lang: undefined, content: "plain" });
   });

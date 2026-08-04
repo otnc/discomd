@@ -34,8 +34,12 @@ describe("strip", () => {
   });
 
   it("strips fenced code blocks, including the language tag", () => {
-    expect(strip("```js\nconst a = 1;\n```")).toBe("const a = 1;\n");
+    expect(strip("```js\nconst a = 1;\n```")).toBe("const a = 1;");
     expect(strip("```plain```")).toBe("plain");
+  });
+
+  it("keeps an intentional blank last line, dropping only the closing fence's own newline", () => {
+    expect(strip("```\ncode\n\n```")).toBe("code\n");
   });
 
   it("strips single-line block quotes", () => {
