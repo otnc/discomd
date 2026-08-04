@@ -156,6 +156,17 @@ describe("parse", () => {
     ]);
   });
 
+  it("keeps a nested list item's indentation in content, dropping only the marker", () => {
+    const text = "- top\n  - nested";
+    const tokens = parse(text);
+    assertPartition(text, tokens);
+    const items = tokens.filter((t) => t.element === "list");
+    expect(items).toEqual([
+      expect.objectContaining({ content: "top" }),
+      expect.objectContaining({ content: "  nested" }),
+    ]);
+  });
+
   it("tags masked links with title and url", () => {
     const tokens = parse("[Discord](https://discord.com)");
     assertPartition("[Discord](https://discord.com)", tokens);

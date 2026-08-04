@@ -203,11 +203,15 @@ function tokenFor(raw: string, start: number): Token {
     };
   }
   if (/^[ \t]*(?:[*\-+]|\d+\.)[ \t]+/.test(raw)) {
+    // Keep the leading indentation (it encodes nesting depth); only the
+    // marker itself and the single space/tab after it are markup.
     return {
       ...base,
       element: "list",
       ordered: /^[ \t]*\d+\./.test(raw),
-      content: unescapeText(raw.replace(/^[ \t]*(?:[*\-+]|\d+\.)[ \t]+/, "")),
+      content: unescapeText(
+        raw.replace(/^([ \t]*)(?:[*\-+]|\d+\.)[ \t]+/, "$1")
+      ),
     };
   }
   if (raw.startsWith("~~")) {
