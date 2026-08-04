@@ -1,9 +1,9 @@
-/**
- * Greet someone by name.
- *
- * Replace this with your own code — it's just a placeholder so the template
- * builds, type-checks and tests pass out of the box.
- */
-export function greet(name: string): string {
-  return `Hello, ${name}!`;
-}
+export type { MarkdownElement } from "./types";
+export { strip } from "./strip";
+export type { StripOptions } from "./strip";
+export { toHTML } from "./html";
+export type { ToHTMLOptions } from "./html";
+export { parse } from "./parse";
+export type { ParsedElement, Token } from "./parse";
+export { formatTimestamp } from "./timestamp";
+export type { FormatTimestampOptions, TimestampStyle } from "./timestamp";
