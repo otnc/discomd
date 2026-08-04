@@ -62,6 +62,10 @@ describe("strip", () => {
     expect(strip("1. first\n2. second")).toBe("first\nsecond");
   });
 
+  it("keeps a nested list item's indentation, dropping only the marker", () => {
+    expect(strip("- top\n  - nested")).toBe("top\n  nested");
+  });
+
   it("strips masked links, keeping the title", () => {
     expect(strip("[Discord](https://discord.com)")).toBe("Discord");
   });
