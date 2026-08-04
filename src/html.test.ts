@@ -32,7 +32,7 @@ describe("toHTML", () => {
 
   it("renders fenced code blocks with a language class", () => {
     expect(toHTML("```js\nconst a = 1;\n```")).toBe(
-      '<pre><code class="language-js">const a = 1;\n</code></pre>'
+      '<pre><code class="language-js">const a = 1;</code></pre>'
     );
     expect(toHTML("```plain```")).toBe("<pre><code>plain</code></pre>");
   });

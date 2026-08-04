@@ -159,11 +159,14 @@ function tokenFor(raw: string, start: number): Token {
 
   if (raw.startsWith("```")) {
     const match = /^```(?:([^\n`]*)\n)?([\s\S]*?)```$/.exec(raw)!;
+    // The closing fence sits on its own line: the newline right before it
+    // is part of the delimiter, not the code content.
+    const body = match[2].endsWith("\n") ? match[2].slice(0, -1) : match[2];
     return {
       ...base,
       element: "codeBlock",
       lang: match[1] || undefined,
-      content: unescapeText(match[2]),
+      content: unescapeText(body),
     };
   }
   if (raw.startsWith("`")) {
