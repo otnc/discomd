@@ -1,7 +1,12 @@
 import escapeHtml from "escape-html";
 import type { MarkdownElement } from "./types";
-import { isMarkdownElement, NESTABLE_ELEMENTS, parse } from "./parse";
-import type { Token } from "./parse";
+import {
+  isMarkdownElement,
+  NESTABLE_ELEMENTS,
+  nestedOptions,
+  parse,
+} from "./parse";
+import type { ParsedElement, Token } from "./parse";
 
 /**
  * Options for {@link toHTML}.
@@ -16,8 +21,12 @@ export interface ToHTMLOptions {
 
 const HTTP_URL_PATTERN = /^https?:\/\//;
 
-function nested(content: string, options: ToHTMLOptions): string {
-  return toHTML(content, options);
+function nested(
+  element: ParsedElement,
+  content: string,
+  options: ToHTMLOptions
+): string {
+  return toHTML(content, nestedOptions(element, options));
 }
 
 function renderLink(token: Token, label: string): string {
@@ -37,7 +46,7 @@ function renderToken(
   if (token.element === "boldItalic") {
     if (!isEnabled("bold") || !isEnabled("italic"))
       return escapeHtml(token.raw);
-    return `<strong><em>${nested(token.content, options)}</em></strong>`;
+    return `<strong><em>${nested(token.element, token.content, options)}</em></strong>`;
   }
 
   if (!isMarkdownElement(token.element) || !isEnabled(token.element)) {
@@ -46,7 +55,7 @@ function renderToken(
 
   const inner = () =>
     NESTABLE_ELEMENTS.has(token.element as MarkdownElement)
-      ? nested(token.content, options)
+      ? nested(token.element, token.content, options)
       : escapeHtml(token.content);
 
   switch (token.element) {
@@ -111,7 +120,9 @@ function collectRun(
 
 function renderList(items: Token[], options: ToHTMLOptions): string {
   const tag = items[0].ordered ? "ol" : "ul";
-  const li = items.map((item) => `<li>${nested(item.content, options)}</li>`);
+  const li = items.map(
+    (item) => `<li>${nested("list", item.content, options)}</li>`
+  );
   return `<${tag}>${li.join("")}</${tag}>`;
 }
 
@@ -121,7 +132,7 @@ function renderBlockQuote(items: Token[], options: ToHTMLOptions): string {
   // rest of the message, so there's no adjacent `blockQuote` token to merge
   // with above).
   return `<blockquote>${items
-    .map((item) => nested(item.content, options))
+    .map((item) => nested("blockQuote", item.content, options))
     .join("<br>")
     .replace(/\n/g, "<br>")}</blockquote>`;
 }

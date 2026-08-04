@@ -65,6 +65,44 @@ export const NESTABLE_ELEMENTS = new Set<MarkdownElement>([
 ]);
 
 /**
+ * Block-level elements: each owns a whole line, and its marker is only
+ * meaningful at the very start of that line.
+ */
+const BLOCK_ELEMENTS: MarkdownElement[] = [
+  "blockQuote",
+  "header",
+  "subtext",
+  "list",
+];
+
+/**
+ * The block-level elements that may in turn hold block-level children — a
+ * quoted header (`> # x`), a list inside a quote, a nested list. Every
+ * other container is inline-only: a block marker sitting in its content is
+ * literal text, since the line's leading position was already claimed by
+ * the container itself.
+ */
+const BLOCK_CONTAINERS = new Set<MarkdownElement>(["blockQuote", "list"]);
+
+/**
+ * Narrows `options` for a recursive descent into `element`'s content,
+ * disabling block-level elements unless `element` can legitimately contain
+ * them. Without this, `# > x` would nest a `<blockquote>` inside an `<h1>`
+ * and `**- x**` a `<ul>` inside a `<strong>` — neither valid HTML nor how
+ * Discord renders them.
+ */
+export function nestedOptions<T extends { disable?: MarkdownElement[] }>(
+  element: ParsedElement,
+  options: T
+): T {
+  if (BLOCK_CONTAINERS.has(element as MarkdownElement)) return options;
+  return {
+    ...options,
+    disable: [...(options.disable ?? []), ...BLOCK_ELEMENTS],
+  };
+}
+
+/**
  * A span of the original text tagged with what it is. Tokens partition the
  * input exactly: sorted by `start`, contiguous, no gaps or overlaps.
  */
@@ -126,7 +164,10 @@ const TOKEN_PATTERN = new RegExp(
     /(?<!\\)(?<!\*)\*\*(?!\*).+?(?<!\*)\*\*(?!\*)/, // bold
     /(?<!\\)(?<!\*)\*(?!\*).+?(?<!\*)\*(?!\*)/, // italic (asterisk)
     /(?<!\\)(?<!_)_(?!_).+?(?<!_)_(?!_)/, // italic (underscore)
-    /(?<!\\)\[[^\]]*\]\([^)\s]+\)/, // link
+    // link. The target is either Discord's embed-suppressing `<url>` form,
+    // or a bare URL that may itself contain one level of balanced parens
+    // (e.g. a Wikipedia `..._(disambiguation)` link).
+    /(?<!\\)\[[^\]]*\]\((?:<[^<>\s]+>|(?:[^()\s]|\([^()\s]*\))+)\)/,
     /(?<!\\)<https?:\/\/[^\s<>]+>/, // embedLink
     /(?<!\\)<t:-?\d+(?::[tTdDfFR])?>/, // timestamp
     /(?<!\\)<@&\d+>/, // roleMention
@@ -233,12 +274,15 @@ function tokenFor(raw: string, start: number): Token {
     return { ...base, element: "italic", content: stripEnds(raw, 1, 1) };
   }
   if (raw.startsWith("[")) {
-    const match = /^\[([^\]]*)\]\(([^)\s]+)\)$/.exec(raw)!;
+    const match = /^\[([^\]]*)\]\((.*)\)$/.exec(raw)!;
+    // In `[title](<url>)` the angle brackets are Discord syntax (they
+    // suppress the embed), not part of the target.
+    const target = /^<(.*)>$/.exec(match[2]);
     return {
       ...base,
       element: "link",
       content: unescapeText(match[1]),
-      url: unescapeText(match[2]),
+      url: unescapeText(target ? target[1] : match[2]),
     };
   }
   if (/^<https?:\/\//.test(raw)) {

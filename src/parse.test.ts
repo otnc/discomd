@@ -177,6 +177,32 @@ describe("parse", () => {
     });
   });
 
+  it("unwraps the angle brackets of an embed-suppressing link target", () => {
+    const text = "[Discord](<https://discord.com>)";
+    const tokens = parse(text);
+    assertPartition(text, tokens);
+    expect(tokens).toEqual([
+      expect.objectContaining({
+        element: "link",
+        content: "Discord",
+        url: "https://discord.com",
+      }),
+    ]);
+  });
+
+  it("keeps balanced parens inside a link target", () => {
+    const text = "[wiki](https://en.wikipedia.org/wiki/Foo_(bar))";
+    const tokens = parse(text);
+    assertPartition(text, tokens);
+    expect(tokens).toEqual([
+      expect.objectContaining({
+        element: "link",
+        content: "wiki",
+        url: "https://en.wikipedia.org/wiki/Foo_(bar)",
+      }),
+    ]);
+  });
+
   it("tags suppressed embed links", () => {
     const tokens = parse("<https://discord.com>");
     assertPartition("<https://discord.com>", tokens);

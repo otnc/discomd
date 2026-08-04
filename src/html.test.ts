@@ -82,6 +82,18 @@ describe("toHTML", () => {
     );
   });
 
+  it("renders an embed-suppressing [title](<url>) link as an anchor", () => {
+    expect(toHTML("[Discord](<https://discord.com>)")).toBe(
+      '<a href="https://discord.com" target="_blank" rel="noopener noreferrer">Discord</a>'
+    );
+  });
+
+  it("keeps balanced parens in a link target, with no stray paren after it", () => {
+    expect(toHTML("[wiki](https://en.wikipedia.org/wiki/Foo_(bar))")).toBe(
+      '<a href="https://en.wikipedia.org/wiki/Foo_(bar)" target="_blank" rel="noopener noreferrer">wiki</a>'
+    );
+  });
+
   it("renders suppressed embed links as anchors", () => {
     expect(toHTML("<https://discord.com>")).toBe(
       '<a href="https://discord.com" target="_blank" rel="noopener noreferrer">https://discord.com</a>'
@@ -130,6 +142,37 @@ describe("toHTML", () => {
 
   it("unescapes backslash-escaped markdown characters", () => {
     expect(toHTML("\\*not bold\\*")).toBe("*not bold*");
+  });
+
+  describe("block markers inside another element", () => {
+    // Nesting a block element inside an inline one would emit invalid HTML
+    // (<strong><blockquote>, <a><h1>, <span><ul>...). A block marker only
+    // counts at the true start of a line, which the container already took.
+    it("keeps block markers literal inside an inline element", () => {
+      expect(toHTML("**# text**")).toBe("<strong># text</strong>");
+      expect(toHTML("**> text**")).toBe("<strong>&gt; text</strong>");
+      expect(toHTML("~~- text~~")).toBe("<s>- text</s>");
+      expect(toHTML("||# text||")).toBe('<span class="spoiler"># text</span>');
+      expect(toHTML("[# text](https://x.com)")).toBe(
+        '<a href="https://x.com" target="_blank" rel="noopener noreferrer"># text</a>'
+      );
+    });
+
+    it("keeps block markers literal inside a header or subtext", () => {
+      expect(toHTML("# > text")).toBe("<h1>&gt; text</h1>");
+      expect(toHTML("# - text")).toBe("<h1>- text</h1>");
+      expect(toHTML("-# > text")).toBe(
+        '<span class="subtext">&gt; text</span>'
+      );
+    });
+
+    it("still nests blocks inside a quote or list item", () => {
+      expect(toHTML("> # text")).toBe("<blockquote><h1>text</h1></blockquote>");
+      expect(toHTML("> - text")).toBe(
+        "<blockquote><ul><li>text</li></ul></blockquote>"
+      );
+      expect(toHTML("- # text")).toBe("<ul><li><h1>text</h1></li></ul>");
+    });
   });
 
   it("handles a realistic mixed message", () => {
