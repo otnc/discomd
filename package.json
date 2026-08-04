@@ -1,18 +1,23 @@
 {
-  "name": "<package-name>",
+  "name": "discomd",
   "version": "0.0.0",
-  "description": "<package-description>",
-  "keywords": [],
-  "homepage": "<package-git>#readme",
+  "description": "Some useful features for Discord Markdown",
+  "keywords": [
+    "discord",
+    "md",
+    "markdown",
+    "parser"
+  ],
+  "homepage": "https://github.com/otnc/discomd#readme",
   "bugs": {
-    "url": "<package-git>/issues"
+    "url": "https://github.com/otnc/discomd/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+<package-git>.git"
+    "url": "git+https://github.com/otnc/discomd.git"
   },
-  "license": "<package-license>",
-  "author": "<package-author>",
+  "license": "MIT",
+  "author": "otoneko.",
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
@@ -48,8 +53,12 @@
     "ci": "prettier --check . && eslint .",
     "prepublishOnly": "npm run build"
   },
+  "dependencies": {
+    "escape-html": "^1.0.3"
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/escape-html": "^1.0.4",
     "@types/node": "^22.20.1",
     "@vitest/coverage-v8": "^4.1.10",
     "eslint": "^10.8.0",
