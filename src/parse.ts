@@ -65,6 +65,67 @@ export const NESTABLE_ELEMENTS = new Set<MarkdownElement>([
 ]);
 
 /**
+ * Block-level elements: each owns a whole line, and its marker is only
+ * meaningful at the very start of that line.
+ */
+const BLOCK_ELEMENTS: MarkdownElement[] = [
+  "blockQuote",
+  "header",
+  "subtext",
+  "list",
+];
+
+const BLOCK_ELEMENT_SET = new Set<MarkdownElement>(BLOCK_ELEMENTS);
+
+/** Whether `element` is block-level (owns a whole line). */
+export function isBlockElement(
+  element: ParsedElement
+): element is MarkdownElement {
+  return BLOCK_ELEMENT_SET.has(element as MarkdownElement);
+}
+
+/**
+ * Containment order for the block elements stacked on a single line, from
+ * outermost to innermost. Discord lets these combine in either written
+ * order (`# > x` and `> # x` both apply both), but only one nesting is
+ * valid HTML — a `<blockquote>` may hold an `<h1>`, never the reverse, and
+ * subtext's `<span>` can hold no block at all. Renderers sort a line's
+ * block stack by this rank so the markers compose regardless of the order
+ * they were written in.
+ */
+export const BLOCK_RANK: Record<string, number> = {
+  blockQuote: 0,
+  list: 1,
+  header: 2,
+  subtext: 3,
+};
+
+/**
+ * Narrows `options` for a recursive descent into `element`'s content.
+ * Block-level elements may hold further blocks (`> # x`, `# > x`, a list
+ * inside a quote, a nested list); every other container is inline-only, so
+ * a block marker in its content stays literal — the line's leading
+ * position was already claimed, and `<strong><blockquote>` or `<a><h1>`
+ * would not be valid HTML anyway.
+ */
+export function nestedOptions<T extends { disable?: MarkdownElement[] }>(
+  element: ParsedElement,
+  options: T
+): T {
+  return isBlockElement(element) ? options : inlineOnlyOptions(options);
+}
+
+/** `options` with every block-level element disabled. */
+export function inlineOnlyOptions<T extends { disable?: MarkdownElement[] }>(
+  options: T
+): T {
+  return {
+    ...options,
+    disable: [...(options.disable ?? []), ...BLOCK_ELEMENTS],
+  };
+}
+
+/**
  * A span of the original text tagged with what it is. Tokens partition the
  * input exactly: sorted by `start`, contiguous, no gaps or overlaps.
  */
@@ -126,7 +187,10 @@ const TOKEN_PATTERN = new RegExp(
     /(?<!\\)(?<!\*)\*\*(?!\*).+?(?<!\*)\*\*(?!\*)/, // bold
     /(?<!\\)(?<!\*)\*(?!\*).+?(?<!\*)\*(?!\*)/, // italic (asterisk)
     /(?<!\\)(?<!_)_(?!_).+?(?<!_)_(?!_)/, // italic (underscore)
-    /(?<!\\)\[[^\]]*\]\([^)\s]+\)/, // link
+    // link. The target is either Discord's embed-suppressing `<url>` form,
+    // or a bare URL that may itself contain one level of balanced parens
+    // (e.g. a Wikipedia `..._(disambiguation)` link).
+    /(?<!\\)\[[^\]]*\]\((?:<[^<>\s]+>|(?:[^()\s]|\([^()\s]*\))+)\)/,
     /(?<!\\)<https?:\/\/[^\s<>]+>/, // embedLink
     /(?<!\\)<t:-?\d+(?::[tTdDfFR])?>/, // timestamp
     /(?<!\\)<@&\d+>/, // roleMention
@@ -233,12 +297,15 @@ function tokenFor(raw: string, start: number): Token {
     return { ...base, element: "italic", content: stripEnds(raw, 1, 1) };
   }
   if (raw.startsWith("[")) {
-    const match = /^\[([^\]]*)\]\(([^)\s]+)\)$/.exec(raw)!;
+    const match = /^\[([^\]]*)\]\((.*)\)$/.exec(raw)!;
+    // In `[title](<url>)` the angle brackets are Discord syntax (they
+    // suppress the embed), not part of the target.
+    const target = /^<(.*)>$/.exec(match[2]);
     return {
       ...base,
       element: "link",
       content: unescapeText(match[1]),
-      url: unescapeText(match[2]),
+      url: unescapeText(target ? target[1] : match[2]),
     };
   }
   if (/^<https?:\/\//.test(raw)) {

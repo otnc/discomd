@@ -72,6 +72,13 @@ describe("strip", () => {
 
   it("strips masked links, keeping the title", () => {
     expect(strip("[Discord](https://discord.com)")).toBe("Discord");
+    expect(strip("[Discord](<https://discord.com>)")).toBe("Discord");
+  });
+
+  it("does not leave a stray paren behind for a link target containing parens", () => {
+    expect(strip("[wiki](https://en.wikipedia.org/wiki/Foo_(bar))")).toBe(
+      "wiki"
+    );
   });
 
   it("strips angle brackets from suppressed embed links", () => {
@@ -142,6 +149,61 @@ describe("strip", () => {
     it("leaves ***text*** fully untouched if either bold or italic is disabled", () => {
       expect(strip("***text***", { disable: ["bold"] })).toBe("***text***");
       expect(strip("***text***", { disable: ["italic"] })).toBe("***text***");
+    });
+  });
+
+  describe("block markers inside another element", () => {
+    // A block marker is only meaningful at the true start of a line. Once a
+    // container has claimed that position, a marker in its content is
+    // literal text -- matching how Discord renders it.
+    it("keeps block markers literal inside an inline element", () => {
+      expect(strip("**# text**")).toBe("# text");
+      expect(strip("**> text**")).toBe("> text");
+      expect(strip("~~- text~~")).toBe("- text");
+      expect(strip("||# text||")).toBe("# text");
+      expect(strip("[# text](https://x.com)")).toBe("# text");
+    });
+
+    it("strips a stack of block markers whichever order they are written in", () => {
+      for (const input of [
+        "# > text",
+        "> # text",
+        "-# > text",
+        "> -# text",
+        "# - text",
+        "- # text",
+        "# * text",
+        "> - text",
+        "- > text",
+        "> # - text",
+      ]) {
+        expect(strip(input)).toBe("text");
+      }
+      expect(strip("- - nested")).toBe("nested");
+    });
+  });
+
+  describe("degenerate and unbalanced markers", () => {
+    it("leaves empty or unpaired markers alone", () => {
+      for (const input of ["**", "****", "____", "~~~~", "||||", "``"]) {
+        expect(strip(input)).toBe(input);
+      }
+      expect(strip("**bold*")).toBe("**bold*");
+    });
+
+    it("does not treat a 4+ hash run or a space-less hash as a header", () => {
+      expect(strip("#### text")).toBe("#### text");
+      expect(strip("#no-space")).toBe("#no-space");
+    });
+
+    it("does not let inline emphasis span a line break", () => {
+      expect(strip("**bold\nacross**")).toBe("**bold\nacross**");
+      expect(strip("||spoil\ner||")).toBe("||spoil\ner||");
+    });
+
+    it("keeps markdown inside code spans verbatim", () => {
+      expect(strip("`**not bold**`")).toBe("**not bold**");
+      expect(strip("`<@123>`")).toBe("<@123>");
     });
   });
 

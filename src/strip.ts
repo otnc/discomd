@@ -1,5 +1,10 @@
 import type { MarkdownElement } from "./types";
-import { isMarkdownElement, NESTABLE_ELEMENTS, parse } from "./parse";
+import {
+  isMarkdownElement,
+  NESTABLE_ELEMENTS,
+  nestedOptions,
+  parse,
+} from "./parse";
 import type { Token } from "./parse";
 
 /**
@@ -22,13 +27,13 @@ function resolve(
 
   if (token.element === "boldItalic") {
     if (!isEnabled("bold") || !isEnabled("italic")) return token.raw;
-    return strip(token.content, options);
+    return strip(token.content, nestedOptions(token.element, options));
   }
 
   if (isMarkdownElement(token.element)) {
     if (!isEnabled(token.element)) return token.raw;
     return NESTABLE_ELEMENTS.has(token.element)
-      ? strip(token.content, options)
+      ? strip(token.content, nestedOptions(token.element, options))
       : token.content;
   }
 

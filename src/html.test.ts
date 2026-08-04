@@ -82,6 +82,18 @@ describe("toHTML", () => {
     );
   });
 
+  it("renders an embed-suppressing [title](<url>) link as an anchor", () => {
+    expect(toHTML("[Discord](<https://discord.com>)")).toBe(
+      '<a href="https://discord.com" target="_blank" rel="noopener noreferrer">Discord</a>'
+    );
+  });
+
+  it("keeps balanced parens in a link target, with no stray paren after it", () => {
+    expect(toHTML("[wiki](https://en.wikipedia.org/wiki/Foo_(bar))")).toBe(
+      '<a href="https://en.wikipedia.org/wiki/Foo_(bar)" target="_blank" rel="noopener noreferrer">wiki</a>'
+    );
+  });
+
   it("renders suppressed embed links as anchors", () => {
     expect(toHTML("<https://discord.com>")).toBe(
       '<a href="https://discord.com" target="_blank" rel="noopener noreferrer">https://discord.com</a>'
@@ -130,6 +142,62 @@ describe("toHTML", () => {
 
   it("unescapes backslash-escaped markdown characters", () => {
     expect(toHTML("\\*not bold\\*")).toBe("*not bold*");
+  });
+
+  describe("block markers inside another element", () => {
+    // Nesting a block element inside an inline one would emit invalid HTML
+    // (<strong><blockquote>, <a><h1>, <span><ul>...). A block marker only
+    // counts at the true start of a line, which the container already took.
+    it("keeps block markers literal inside an inline element", () => {
+      expect(toHTML("**# text**")).toBe("<strong># text</strong>");
+      expect(toHTML("**> text**")).toBe("<strong>&gt; text</strong>");
+      expect(toHTML("~~- text~~")).toBe("<s>- text</s>");
+      expect(toHTML("||# text||")).toBe('<span class="spoiler"># text</span>');
+      expect(toHTML("[# text](https://x.com)")).toBe(
+        '<a href="https://x.com" target="_blank" rel="noopener noreferrer"># text</a>'
+      );
+    });
+
+    // Stacked block markers all apply, but only one nesting is valid HTML
+    // (a <blockquote> may hold an <h1>, never the reverse), so the stack is
+    // emitted in containment order however it was written.
+    it("applies a stack of block markers whichever order they are written in", () => {
+      for (const input of ["# > text", "> # text"]) {
+        expect(toHTML(input)).toBe("<blockquote><h1>text</h1></blockquote>");
+      }
+      for (const input of ["-# > text", "> -# text"]) {
+        expect(toHTML(input)).toBe(
+          '<blockquote><span class="subtext">text</span></blockquote>'
+        );
+      }
+      for (const input of ["# - text", "- # text", "# * text"]) {
+        expect(toHTML(input)).toBe("<ul><li><h1>text</h1></li></ul>");
+      }
+      for (const input of ["> - text", "- > text"]) {
+        expect(toHTML(input)).toBe(
+          "<blockquote><ul><li>text</li></ul></blockquote>"
+        );
+      }
+      for (const input of ["# -# text", "-# # text"]) {
+        expect(toHTML(input)).toBe(
+          '<h1><span class="subtext">text</span></h1>'
+        );
+      }
+    });
+
+    it("nests a three-deep block stack in containment order", () => {
+      expect(toHTML("> # - text")).toBe(
+        "<blockquote><ul><li><h1>text</h1></li></ul></blockquote>"
+      );
+    });
+
+    it("still merges consecutive quote and list lines into one element", () => {
+      expect(toHTML("> a\n> b")).toBe("<blockquote>a<br>b</blockquote>");
+      expect(toHTML("- a\n- b")).toBe("<ul><li>a</li><li>b</li></ul>");
+      expect(toHTML("- - nested")).toBe(
+        "<ul><li><ul><li>nested</li></ul></li></ul>"
+      );
+    });
   });
 
   it("handles a realistic mixed message", () => {
