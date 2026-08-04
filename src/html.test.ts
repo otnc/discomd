@@ -158,20 +158,45 @@ describe("toHTML", () => {
       );
     });
 
-    it("keeps block markers literal inside a header or subtext", () => {
-      expect(toHTML("# > text")).toBe("<h1>&gt; text</h1>");
-      expect(toHTML("# - text")).toBe("<h1>- text</h1>");
-      expect(toHTML("-# > text")).toBe(
-        '<span class="subtext">&gt; text</span>'
+    // Stacked block markers all apply, but only one nesting is valid HTML
+    // (a <blockquote> may hold an <h1>, never the reverse), so the stack is
+    // emitted in containment order however it was written.
+    it("applies a stack of block markers whichever order they are written in", () => {
+      for (const input of ["# > text", "> # text"]) {
+        expect(toHTML(input)).toBe("<blockquote><h1>text</h1></blockquote>");
+      }
+      for (const input of ["-# > text", "> -# text"]) {
+        expect(toHTML(input)).toBe(
+          '<blockquote><span class="subtext">text</span></blockquote>'
+        );
+      }
+      for (const input of ["# - text", "- # text", "# * text"]) {
+        expect(toHTML(input)).toBe("<ul><li><h1>text</h1></li></ul>");
+      }
+      for (const input of ["> - text", "- > text"]) {
+        expect(toHTML(input)).toBe(
+          "<blockquote><ul><li>text</li></ul></blockquote>"
+        );
+      }
+      for (const input of ["# -# text", "-# # text"]) {
+        expect(toHTML(input)).toBe(
+          '<h1><span class="subtext">text</span></h1>'
+        );
+      }
+    });
+
+    it("nests a three-deep block stack in containment order", () => {
+      expect(toHTML("> # - text")).toBe(
+        "<blockquote><ul><li><h1>text</h1></li></ul></blockquote>"
       );
     });
 
-    it("still nests blocks inside a quote or list item", () => {
-      expect(toHTML("> # text")).toBe("<blockquote><h1>text</h1></blockquote>");
-      expect(toHTML("> - text")).toBe(
-        "<blockquote><ul><li>text</li></ul></blockquote>"
+    it("still merges consecutive quote and list lines into one element", () => {
+      expect(toHTML("> a\n> b")).toBe("<blockquote>a<br>b</blockquote>");
+      expect(toHTML("- a\n- b")).toBe("<ul><li>a</li><li>b</li></ul>");
+      expect(toHTML("- - nested")).toBe(
+        "<ul><li><ul><li>nested</li></ul></li></ul>"
       );
-      expect(toHTML("- # text")).toBe("<ul><li><h1>text</h1></li></ul>");
     });
   });
 

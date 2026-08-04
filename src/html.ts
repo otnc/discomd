@@ -1,6 +1,9 @@
 import escapeHtml from "escape-html";
 import type { MarkdownElement } from "./types";
 import {
+  BLOCK_RANK,
+  inlineOnlyOptions,
+  isBlockElement,
   isMarkdownElement,
   NESTABLE_ELEMENTS,
   nestedOptions,
@@ -137,6 +140,56 @@ function renderBlockQuote(items: Token[], options: ToHTMLOptions): string {
     .replace(/\n/g, "<br>")}</blockquote>`;
 }
 
+// Wraps `inner` in the single element `token` denotes. Used when a line
+// stacks several block markers and they have to be re-nested in
+// containment order rather than written order.
+function wrapBlock(token: Token, inner: string): string {
+  switch (token.element) {
+    case "blockQuote":
+      return `<blockquote>${inner}</blockquote>`;
+    case "list": {
+      const tag = token.ordered ? "ol" : "ul";
+      return `<${tag}><li>${inner}</li></${tag}>`;
+    }
+    case "header":
+      return `<h${token.level}>${inner}</h${token.level}>`;
+    case "subtext":
+      return `<span class="subtext">${inner}</span>`;
+    /* c8 ignore next 2 -- only ever called with the four block elements */
+    default:
+      return inner;
+  }
+}
+
+// Peels every block marker stacked on this one line, outermost written
+// first, and returns them with the inline remainder they all wrap.
+function peelBlocks(
+  token: Token,
+  isEnabled: (element: MarkdownElement) => boolean
+): { blocks: Token[]; content: string } {
+  const blocks = [token];
+  let content = token.content;
+  for (;;) {
+    const sub = parse(content);
+    const only = sub.length === 1 ? sub[0] : undefined;
+    if (!only || !isBlockElement(only.element) || !isEnabled(only.element)) {
+      break;
+    }
+    blocks.push(only);
+    content = only.content;
+  }
+  return { blocks, content };
+}
+
+// Whether the written order of a line's block stack differs from the order
+// they must nest in to be valid HTML.
+function needsReorder(blocks: Token[]): boolean {
+  return blocks.some(
+    (block, i) =>
+      i > 0 && BLOCK_RANK[block.element] < BLOCK_RANK[blocks[i - 1].element]
+  );
+}
+
 /**
  * Render Discord Markdown to an HTML string.
  *
@@ -172,6 +225,28 @@ export function toHTML(text: string, options: ToHTMLOptions = {}): string {
   let i = 0;
   while (i < tokens.length) {
     const token = tokens[i];
+
+    // A line can stack several block markers (`# > x`, `> -# x`). They all
+    // apply, but only in containment order, so when the written order
+    // differs the whole stack is re-nested here. Stacks already written
+    // outermost-first fall through to the run-merging paths below, which
+    // keep consecutive quotes/list items in one element.
+    if (isBlockElement(token.element) && isEnabled(token.element)) {
+      const { blocks, content } = peelBlocks(token, isEnabled);
+      if (needsReorder(blocks)) {
+        const ordered = [...blocks].sort(
+          (a, b) => BLOCK_RANK[a.element] - BLOCK_RANK[b.element]
+        );
+        // Every block marker has been peeled off, so the remainder is inline.
+        let html = toHTML(content, inlineOnlyOptions(options));
+        for (let k = ordered.length - 1; k >= 0; k--) {
+          html = wrapBlock(ordered[k], html);
+        }
+        pieces.push(html);
+        i += 1;
+        continue;
+      }
+    }
 
     if (token.element === "list" && isEnabled("list")) {
       const run = collectRun(tokens, i, "list");

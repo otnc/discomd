@@ -75,27 +75,50 @@ const BLOCK_ELEMENTS: MarkdownElement[] = [
   "list",
 ];
 
-/**
- * The block-level elements that may in turn hold block-level children — a
- * quoted header (`> # x`), a list inside a quote, a nested list. Every
- * other container is inline-only: a block marker sitting in its content is
- * literal text, since the line's leading position was already claimed by
- * the container itself.
- */
-const BLOCK_CONTAINERS = new Set<MarkdownElement>(["blockQuote", "list"]);
+const BLOCK_ELEMENT_SET = new Set<MarkdownElement>(BLOCK_ELEMENTS);
+
+/** Whether `element` is block-level (owns a whole line). */
+export function isBlockElement(
+  element: ParsedElement
+): element is MarkdownElement {
+  return BLOCK_ELEMENT_SET.has(element as MarkdownElement);
+}
 
 /**
- * Narrows `options` for a recursive descent into `element`'s content,
- * disabling block-level elements unless `element` can legitimately contain
- * them. Without this, `# > x` would nest a `<blockquote>` inside an `<h1>`
- * and `**- x**` a `<ul>` inside a `<strong>` — neither valid HTML nor how
- * Discord renders them.
+ * Containment order for the block elements stacked on a single line, from
+ * outermost to innermost. Discord lets these combine in either written
+ * order (`# > x` and `> # x` both apply both), but only one nesting is
+ * valid HTML — a `<blockquote>` may hold an `<h1>`, never the reverse, and
+ * subtext's `<span>` can hold no block at all. Renderers sort a line's
+ * block stack by this rank so the markers compose regardless of the order
+ * they were written in.
+ */
+export const BLOCK_RANK: Record<string, number> = {
+  blockQuote: 0,
+  list: 1,
+  header: 2,
+  subtext: 3,
+};
+
+/**
+ * Narrows `options` for a recursive descent into `element`'s content.
+ * Block-level elements may hold further blocks (`> # x`, `# > x`, a list
+ * inside a quote, a nested list); every other container is inline-only, so
+ * a block marker in its content stays literal — the line's leading
+ * position was already claimed, and `<strong><blockquote>` or `<a><h1>`
+ * would not be valid HTML anyway.
  */
 export function nestedOptions<T extends { disable?: MarkdownElement[] }>(
   element: ParsedElement,
   options: T
 ): T {
-  if (BLOCK_CONTAINERS.has(element as MarkdownElement)) return options;
+  return isBlockElement(element) ? options : inlineOnlyOptions(options);
+}
+
+/** `options` with every block-level element disabled. */
+export function inlineOnlyOptions<T extends { disable?: MarkdownElement[] }>(
+  options: T
+): T {
   return {
     ...options,
     disable: [...(options.disable ?? []), ...BLOCK_ELEMENTS],

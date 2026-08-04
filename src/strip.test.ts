@@ -164,16 +164,21 @@ describe("strip", () => {
       expect(strip("[# text](https://x.com)")).toBe("# text");
     });
 
-    it("keeps block markers literal inside a header or subtext", () => {
-      expect(strip("# > text")).toBe("> text");
-      expect(strip("# - text")).toBe("- text");
-      expect(strip("-# > text")).toBe("> text");
-    });
-
-    it("still resolves block markers inside a quote or list item", () => {
-      expect(strip("> # text")).toBe("text");
-      expect(strip("> - text")).toBe("text");
-      expect(strip("- # text")).toBe("text");
+    it("strips a stack of block markers whichever order they are written in", () => {
+      for (const input of [
+        "# > text",
+        "> # text",
+        "-# > text",
+        "> -# text",
+        "# - text",
+        "- # text",
+        "# * text",
+        "> - text",
+        "- > text",
+        "> # - text",
+      ]) {
+        expect(strip(input)).toBe("text");
+      }
       expect(strip("- - nested")).toBe("nested");
     });
   });
