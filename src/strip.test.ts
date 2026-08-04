@@ -81,6 +81,11 @@ describe("strip", () => {
     );
   });
 
+  it("strips a link whose target is padded with whitespace", () => {
+    expect(strip("[a]( https://x.com )")).toBe("a");
+    expect(strip("[a]( <https://x.com> )")).toBe("a");
+  });
+
   it("strips angle brackets from suppressed embed links", () => {
     expect(strip("<https://discord.com>")).toBe("https://discord.com");
   });

@@ -189,8 +189,10 @@ const TOKEN_PATTERN = new RegExp(
     /(?<!\\)(?<!_)_(?!_).+?(?<!_)_(?!_)/, // italic (underscore)
     // link. The target is either Discord's embed-suppressing `<url>` form,
     // or a bare URL that may itself contain one level of balanced parens
-    // (e.g. a Wikipedia `..._(disambiguation)` link).
-    /(?<!\\)\[[^\]]*\]\((?:<[^<>\s]+>|(?:[^()\s]|\([^()\s]*\))+)\)/,
+    // (e.g. a Wikipedia `..._(disambiguation)` link). Padding around the
+    // target is allowed and trimmed off; a bare target still cannot contain
+    // whitespace itself, and `]` and `(` must stay adjacent.
+    /(?<!\\)\[[^\]]*\]\([ \t]*(?:<[^<>\s]+>|(?:[^()\s]|\([^()\s]*\))+)[ \t]*\)/,
     /(?<!\\)<https?:\/\/[^\s<>]+>/, // embedLink
     /(?<!\\)<t:-?\d+(?::[tTdDfFR])?>/, // timestamp
     /(?<!\\)<@&\d+>/, // roleMention
@@ -298,14 +300,15 @@ function tokenFor(raw: string, start: number): Token {
   }
   if (raw.startsWith("[")) {
     const match = /^\[([^\]]*)\]\((.*)\)$/.exec(raw)!;
-    // In `[title](<url>)` the angle brackets are Discord syntax (they
-    // suppress the embed), not part of the target.
-    const target = /^<(.*)>$/.exec(match[2]);
+    // Padding around the target is syntax, as are the angle brackets of
+    // the `[title](<url>)` embed-suppressing form.
+    const padded = match[2].trim();
+    const target = /^<(.*)>$/.exec(padded);
     return {
       ...base,
       element: "link",
       content: unescapeText(match[1]),
-      url: unescapeText(target ? target[1] : match[2]),
+      url: unescapeText(target ? target[1] : padded),
     };
   }
   if (/^<https?:\/\//.test(raw)) {

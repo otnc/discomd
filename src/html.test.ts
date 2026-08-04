@@ -94,6 +94,15 @@ describe("toHTML", () => {
     );
   });
 
+  it("renders a link whose target is padded with whitespace", () => {
+    const expected =
+      '<a href="https://x.com" target="_blank" rel="noopener noreferrer">a</a>';
+    expect(toHTML("[a]( https://x.com )")).toBe(expected);
+    // The padded `<url>` form used to half-match, leaving the angle-bracket
+    // part to be picked up separately as a standalone embed link.
+    expect(toHTML("[a]( <https://x.com> )")).toBe(expected);
+  });
+
   it("renders suppressed embed links as anchors", () => {
     expect(toHTML("<https://discord.com>")).toBe(
       '<a href="https://discord.com" target="_blank" rel="noopener noreferrer">https://discord.com</a>'
