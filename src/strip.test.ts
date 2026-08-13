@@ -93,6 +93,7 @@ describe("strip", () => {
   it("leaves mentions and custom emoji untouched", () => {
     expect(strip("<@123456789012345678>")).toBe("<@123456789012345678>");
     expect(strip("<@&123456789012345678>")).toBe("<@&123456789012345678>");
+    expect(strip("<@$123456789012345678>")).toBe("<@$123456789012345678>");
     expect(strip("<#123456789012345678>")).toBe("<#123456789012345678>");
     expect(strip("<:pog:123456789012345678>")).toBe(
       "<:pog:123456789012345678>"

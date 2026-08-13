@@ -261,9 +261,9 @@ describe("parse", () => {
     expect(tokens[0]).toMatchObject({ element: "timestamp", style: "f" });
   });
 
-  it("tags mentions, role mentions, channel mentions, emoji and slash commands", () => {
+  it("tags mentions, role/game/channel mentions, emoji and slash commands", () => {
     const text =
-      "<@123> <@!123> <@&123> <#123> <:pog:123> <a:pog:123> </cmd:123>";
+      "<@123> <@!123> <@&123> <@$123> <#123> <:pog:123> <a:pog:123> </cmd:123>";
     const tokens = parse(text);
     assertPartition(text, tokens);
     const elements = tokens
@@ -273,11 +273,33 @@ describe("parse", () => {
       "mention",
       "mention",
       "roleMention",
+      "gameMention",
       "channelMention",
       "emoji",
       "emoji",
       "slashCommand",
     ]);
+  });
+
+  it("tags a game mention", () => {
+    const text = "<@$123456789012345678>";
+    const tokens = parse(text);
+    assertPartition(text, tokens);
+    expect(tokens).toEqual([
+      expect.objectContaining({
+        element: "gameMention",
+        raw: text,
+        content: "@$123456789012345678",
+      }),
+    ]);
+  });
+
+  it("does not read a game mention without a numeric id", () => {
+    for (const text of ["<@$>", "<@$abc>"]) {
+      const tokens = parse(text);
+      assertPartition(text, tokens);
+      expect(tokens.every((t) => t.element === "text")).toBe(true);
+    }
   });
 
   it("tags a leading @silent marker as its own token", () => {
