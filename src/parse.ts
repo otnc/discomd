@@ -16,6 +16,7 @@ export type ParsedElement =
   | "mention"
   | "roleMention"
   | "channelMention"
+  | "gameMention"
   | "emoji"
   | "slashCommand"
   | "text";
@@ -196,6 +197,7 @@ const TOKEN_PATTERN = new RegExp(
     /(?<!\\)<https?:\/\/[^\s<>]+>/, // embedLink
     /(?<!\\)<t:-?\d+(?::[tTdDfFR])?>/, // timestamp
     /(?<!\\)<@&\d+>/, // roleMention
+    /(?<!\\)<@\$\d+>/, // gameMention
     /(?<!\\)<@!?\d+>/, // mention
     /(?<!\\)<#\d+>/, // channelMention
     /(?<!\\)<a?:[^:<>]+:\d+>/, // emoji
@@ -327,6 +329,9 @@ function tokenFor(raw: string, start: number): Token {
   }
   if (raw.startsWith("<@&")) {
     return { ...base, element: "roleMention", content: stripEnds(raw, 1, 1) };
+  }
+  if (raw.startsWith("<@$")) {
+    return { ...base, element: "gameMention", content: stripEnds(raw, 1, 1) };
   }
   if (raw.startsWith("<@")) {
     return { ...base, element: "mention", content: stripEnds(raw, 1, 1) };
