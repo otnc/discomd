@@ -85,7 +85,7 @@ Plus Discord-specific tokens:
 - Suppressed embed links (`<https://example.com>`)
 - A leading `@silent` marker — only recognized as the first thing in the message
 
-Mentions (`<@id>`, `<@&id>`, `<@$id>`, `<#id>`), custom emoji (`<:name:id>`, `<a:name:id>`) and timestamps (`<t:unix:style>`) are left as-is (untouched by `strip`, literal escaped text from `toHTML`), since their raw IDs carry no displayable information on their own.
+Mentions (`<@id>`, `<@!id>`, `<@&id>`, `<@$id>`, `<#id>`), custom emoji (`<:name:id>`, `<a:name:id>`) and timestamps (`<t:unix:style>`) are left as-is (untouched by `strip`, literal escaped text from `toHTML`), since their raw IDs carry no displayable information on their own.
 
 ### `strip`
 
@@ -106,7 +106,7 @@ Line breaks are preserved as-is (not converted to `<br>`, except to join lines w
 
 Tokenizes Discord Markdown without removing or rendering anything: `parse(text)` returns a flat, non-overlapping list of tokens (`{ element, start, end, raw, content, ... }`) covering the entire input — plain-text spans are tagged `"text"`. It doesn't take a `disable` option; it always describes everything it recognizes.
 
-`element` is a superset of the names `disable` accepts: it also tags `"timestamp"`, `"mention"`, `"roleMention"`, `"gameMention"` (`<@$id>`), `"channelMention"`, `"emoji"`, `"slashCommand"` and `"boldItalic"` (for `***text***`) — tokens `strip`/`toHTML` otherwise leave untouched or treat specially — so you can resolve or render them yourself, e.g. pass a `"timestamp"` token's `epoch`/`style` to `formatTimestamp`.
+`element` is a superset of the names `disable` accepts: it also tags `"timestamp"`, `"mention"`, `"nicknameMention"` (`<@!id>`), `"roleMention"`, `"gameMention"` (`<@$id>`), `"channelMention"`, `"emoji"`, `"slashCommand"` and `"boldItalic"` (for `***text***`) — tokens `strip`/`toHTML` otherwise leave untouched or treat specially — so you can resolve or render them yourself, e.g. pass a `"timestamp"` token's `epoch`/`style` to `formatTimestamp`.
 
 `strip` and `toHTML` are both built on `parse`: each token's `content` is resolved (recursively, for elements whose content can itself hold further markdown, like bold containing italic) and either kept or reverted to `raw` depending on `disable`. `parse` itself only ever describes the outermost construct at a given position — it doesn't recurse — consistent with the regex-based (not full CommonMark) approach.
 

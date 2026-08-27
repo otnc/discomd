@@ -14,6 +14,7 @@ export type ParsedElement =
   | "boldItalic"
   | "timestamp"
   | "mention"
+  | "nicknameMention"
   | "roleMention"
   | "channelMention"
   | "gameMention"
@@ -198,7 +199,8 @@ const TOKEN_PATTERN = new RegExp(
     /(?<!\\)<t:-?\d+(?::[tTdDfFR])?>/, // timestamp
     /(?<!\\)<@&\d+>/, // roleMention
     /(?<!\\)<@\$\d+>/, // gameMention
-    /(?<!\\)<@!?\d+>/, // mention
+    /(?<!\\)<@!\d+>/, // nicknameMention
+    /(?<!\\)<@\d+>/, // mention
     /(?<!\\)<#\d+>/, // channelMention
     /(?<!\\)<a?:[^:<>]+:\d+>/, // emoji
     /(?<!\\)<\/[^<>]+:\d+>/, // slashCommand
@@ -332,6 +334,13 @@ function tokenFor(raw: string, start: number): Token {
   }
   if (raw.startsWith("<@$")) {
     return { ...base, element: "gameMention", content: stripEnds(raw, 1, 1) };
+  }
+  if (raw.startsWith("<@!")) {
+    return {
+      ...base,
+      element: "nicknameMention",
+      content: stripEnds(raw, 1, 1),
+    };
   }
   if (raw.startsWith("<@")) {
     return { ...base, element: "mention", content: stripEnds(raw, 1, 1) };

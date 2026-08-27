@@ -111,6 +111,9 @@ describe("toHTML", () => {
 
   it("leaves mentions, custom emoji and timestamps as literal escaped text", () => {
     expect(toHTML("<@123456789012345678>")).toBe("&lt;@123456789012345678&gt;");
+    expect(toHTML("<@!123456789012345678>")).toBe(
+      "&lt;@!123456789012345678&gt;"
+    );
     expect(toHTML("<@$123456789012345678>")).toBe(
       "&lt;@$123456789012345678&gt;"
     );
