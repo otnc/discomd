@@ -14,7 +14,7 @@ export type ParsedElement =
   | "boldItalic"
   | "timestamp"
   | "mention"
-  | "nicknameMention"
+  | "globalMention"
   | "roleMention"
   | "channelMention"
   | "gameMention"
@@ -39,7 +39,7 @@ const MARKDOWN_ELEMENTS = new Set<MarkdownElement>([
   "silent",
 ]);
 
-/** Whether `element` is one of {@link MarkdownElement} (i.e. a `disable`-able kind), as opposed to a parse-only kind (`"text"`, `"boldItalic"`, mentions, etc.). */
+/** Whether `element` is a `disable`-able {@link MarkdownElement}, as opposed to a parse-only kind. */
 export function isMarkdownElement(
   element: ParsedElement
 ): element is MarkdownElement {
@@ -48,10 +48,9 @@ export function isMarkdownElement(
 
 /**
  * Elements whose `content` can itself contain further markdown (e.g. italic
- * nested inside bold) — `parse` only tags the outermost construct, so
- * `strip`/`toHTML` resolve these by recursing over the token's content.
- * Excludes verbatim content (`code`, `codeBlock`) and leaf values
- * (`embedLink`, `silent`).
+ * nested inside bold), resolved by `strip`/`toHTML` recursing over the
+ * token's content. Excludes verbatim (`code`, `codeBlock`) and leaf
+ * (`embedLink`, `silent`) elements.
  */
 export const NESTABLE_ELEMENTS = new Set<MarkdownElement>([
   "bold",
@@ -66,10 +65,7 @@ export const NESTABLE_ELEMENTS = new Set<MarkdownElement>([
   "link",
 ]);
 
-/**
- * Block-level elements: each owns a whole line, and its marker is only
- * meaningful at the very start of that line.
- */
+/** Elements that own a whole line; their marker is only meaningful at line start. */
 const BLOCK_ELEMENTS: MarkdownElement[] = [
   "blockQuote",
   "header",
@@ -87,13 +83,11 @@ export function isBlockElement(
 }
 
 /**
- * Containment order for the block elements stacked on a single line, from
- * outermost to innermost. Discord lets these combine in either written
- * order (`# > x` and `> # x` both apply both), but only one nesting is
- * valid HTML — a `<blockquote>` may hold an `<h1>`, never the reverse, and
- * subtext's `<span>` can hold no block at all. Renderers sort a line's
- * block stack by this rank so the markers compose regardless of the order
- * they were written in.
+ * Containment order for a line's stacked block markers, outermost first.
+ * Discord accepts either written order (`# > x` or `> # x`), but only one
+ * nesting is valid HTML — a `<blockquote>` can hold an `<h1>`, never the
+ * reverse. Renderers sort by this rank so markers compose regardless of
+ * how they were written.
  */
 export const BLOCK_RANK: Record<string, number> = {
   blockQuote: 0,
@@ -104,11 +98,10 @@ export const BLOCK_RANK: Record<string, number> = {
 
 /**
  * Narrows `options` for a recursive descent into `element`'s content.
- * Block-level elements may hold further blocks (`> # x`, `# > x`, a list
- * inside a quote, a nested list); every other container is inline-only, so
- * a block marker in its content stays literal — the line's leading
- * position was already claimed, and `<strong><blockquote>` or `<a><h1>`
- * would not be valid HTML anyway.
+ * Block elements may hold further blocks (`> # x`, a list inside a quote);
+ * every other container is inline-only, so a block marker in its content
+ * stays literal — `<strong><blockquote>` or `<a><h1>` would not be valid
+ * HTML anyway.
  */
 export function nestedOptions<T extends { disable?: MarkdownElement[] }>(
   element: ParsedElement,
@@ -159,20 +152,15 @@ export interface Token {
   style?: TimestampStyle;
 }
 
-// Each alternative is tried in order at a given position; JS regex
-// alternation takes the first one that matches, so more specific/anchored
-// patterns are listed first where two could otherwise both start at the
-// same index. Lookaround-guarded widths (bold vs. italic vs. boldItalic,
-// code vs. code block) prevent an enabled style from partially matching a
-// disabled sibling's markers (see strip.ts) and make truly ambiguous runs
-// (e.g. four asterisks) fall through as plain text instead of being
-// mis-tagged.
+// Alternatives are tried in order, so more specific/anchored patterns come
+// first where two could match at the same index. Lookaround-guarded widths
+// (bold vs. boldItalic, code vs. code block) keep an enabled style from
+// partially matching a disabled sibling's markers, and make ambiguous runs
+// (e.g. four asterisks) fall through as plain text.
 //
-// Inline patterns also guard against a preceding backslash so Discord's
-// `\*escaped\*` syntax falls through as plain text. Line-anchored patterns
-// (block quote, header, subtext, list) need no such guard: `^` requires the
-// marker to be the line's literal first character, which a leading
-// backslash already rules out.
+// Inline patterns guard against a preceding backslash for `\*escaped\*`;
+// line-anchored patterns (block quote, header, subtext, list) don't need
+// it since `^` already requires a literal first character.
 const TOKEN_PATTERN = new RegExp(
   [
     /(?<!\\)```(?:[^\n`]*\n)?[\s\S]*?```/, // codeBlock
@@ -189,17 +177,15 @@ const TOKEN_PATTERN = new RegExp(
     /(?<!\\)(?<!\*)\*\*(?!\*).+?(?<!\*)\*\*(?!\*)/, // bold
     /(?<!\\)(?<!\*)\*(?!\*).+?(?<!\*)\*(?!\*)/, // italic (asterisk)
     /(?<!\\)(?<!_)_(?!_).+?(?<!_)_(?!_)/, // italic (underscore)
-    // link. The target is either Discord's embed-suppressing `<url>` form,
-    // or a bare URL that may itself contain one level of balanced parens
-    // (e.g. a Wikipedia `..._(disambiguation)` link). Padding around the
-    // target is allowed and trimmed off; a bare target still cannot contain
-    // whitespace itself, and `]` and `(` must stay adjacent.
+    // link. Target is `<url>` or a bare URL with one level of balanced
+    // parens (e.g. a Wikipedia `..._(disambiguation)` link); padding around
+    // it is trimmed, but a bare target still can't contain whitespace.
     /(?<!\\)\[[^\]]*\]\([ \t]*(?:<[^<>\s]+>|(?:[^()\s]|\([^()\s]*\))+)[ \t]*\)/,
     /(?<!\\)<https?:\/\/[^\s<>]+>/, // embedLink
     /(?<!\\)<t:-?\d+(?::[tTdDfFR])?>/, // timestamp
     /(?<!\\)<@&\d+>/, // roleMention
     /(?<!\\)<@\$\d+>/, // gameMention
-    /(?<!\\)<@!\d+>/, // nicknameMention
+    /(?<!\\)<@!\d+>/, // globalMention
     /(?<!\\)<@\d+>/, // mention
     /(?<!\\)<#\d+>/, // channelMention
     /(?<!\\)<a?:[^:<>]+:\d+>/, // emoji
@@ -338,7 +324,7 @@ function tokenFor(raw: string, start: number): Token {
   if (raw.startsWith("<@!")) {
     return {
       ...base,
-      element: "nicknameMention",
+      element: "globalMention",
       content: stripEnds(raw, 1, 1),
     };
   }

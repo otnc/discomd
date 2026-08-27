@@ -1,13 +1,10 @@
 # Contributing
 
-Thanks for your interest in improving discomd!
-This guide gets you set up and explains how the project is put together.
-If anything here is unclear, opening an issue to ask is welcome.
+Thanks for your interest in improving discomd! This guide gets you set up and explains how the project is put together. If anything here is unclear, opening an issue to ask is welcome.
 
 ## Getting set up
 
-You'll need Node.js >= 22.
-Then install the dependencies:
+You'll need Node.js >= 22. Then install the dependencies:
 
 ```sh
 npm install
@@ -38,10 +35,7 @@ npm run ci && npm run typecheck && npm run test && npm run build
 
 ## Conventions
 
-- **Formatting is Prettier** (default settings, no overrides) and **linting is ESLint**
-  (`eslint.config.js` — `typescript-eslint`'s recommended rules, with `eslint-config-prettier`
-  disabling any ESLint rule that would conflict with Prettier's formatting).
-  Running `npm run check` before you commit handles both.
+- **Formatting is Prettier** (default settings, no overrides) and **linting is ESLint** (`eslint.config.js` — `typescript-eslint`'s recommended rules, with `eslint-config-prettier` disabling any ESLint rule that would conflict with Prettier's formatting). Running `npm run check` before you commit handles both.
 - **Tests live next to the code** as `*.test.ts` and run with vitest.
 - **Comments and docs are in English** and kept brief.
 - **Type-only imports use `import type`** (`verbatimModuleSyntax` is on).
@@ -52,12 +46,9 @@ Keep each change focused and add tests for any new behaviour.
 
 ## Releasing (maintainers)
 
-Releasing is one manual step.
-From the Actions tab, run the `release` workflow (`workflow_dispatch`) and give it a `version` input — either a bump keyword (`patch` / `minor` / `major` / `prerelease`) or an explicit version like `0.1.0`.
-The workflow runs the checks and build, bumps `package.json`, publishes to npm with provenance via **trusted publishing** (OIDC — no `NPM_TOKEN` needed), pushes the version commit and tag, and creates a GitHub Release with generated notes.
+Releasing is one manual step. From the Actions tab, run the `release` workflow (`workflow_dispatch`) and give it a `version` input — either a bump keyword (`patch` / `minor` / `major` / `prerelease`) or an explicit version like `0.1.0`. The workflow runs the checks and build, bumps `package.json`, publishes to npm with provenance via **trusted publishing** (OIDC — no `NPM_TOKEN` needed), pushes the version commit and tag, and creates a GitHub Release with generated notes.
 
-Trusted publishing must be configured once on npmjs.com:
-package **Settings → Publishing access → Trusted publishers → GitHub**, pointing at this repository's `release.yml` workflow.
+Trusted publishing must be configured once on npmjs.com: package **Settings → Publishing access → Trusted publishers → GitHub**, pointing at this repository's `release.yml` workflow.
 
 ## License
 

@@ -261,7 +261,7 @@ describe("parse", () => {
     expect(tokens[0]).toMatchObject({ element: "timestamp", style: "f" });
   });
 
-  it("tags mentions, nickname/role/game/channel mentions, emoji and slash commands", () => {
+  it("tags mentions, global/role/game/channel mentions, emoji and slash commands", () => {
     const text =
       "<@123> <@!123> <@&123> <@$123> <#123> <:pog:123> <a:pog:123> </cmd:123>";
     const tokens = parse(text);
@@ -271,7 +271,7 @@ describe("parse", () => {
       .map((t) => t.element);
     expect(elements).toEqual([
       "mention",
-      "nicknameMention",
+      "globalMention",
       "roleMention",
       "gameMention",
       "channelMention",
@@ -281,20 +281,20 @@ describe("parse", () => {
     ]);
   });
 
-  it("tags a nickname mention", () => {
+  it("tags a global mention", () => {
     const text = "<@!123456789012345678>";
     const tokens = parse(text);
     assertPartition(text, tokens);
     expect(tokens).toEqual([
       expect.objectContaining({
-        element: "nicknameMention",
+        element: "globalMention",
         raw: text,
         content: "@!123456789012345678",
       }),
     ]);
   });
 
-  it("does not read a nickname mention without a numeric id", () => {
+  it("does not read a global mention without a numeric id", () => {
     for (const text of ["<@!>", "<@!abc>"]) {
       const tokens = parse(text);
       assertPartition(text, tokens);

@@ -50,10 +50,10 @@ function resolve(
  * suppressed embed links (`<https://example.com>`) and a leading `@silent`
  * marker.
  *
- * Mentions (`<@id>`, `<@!id>`, `<@&id>`, `<@$id>`, `<#id>`, `</command:id>`), custom emoji
- * (`<:name:id>`, `<a:name:id>`) and timestamps (`<t:unix:style>`) are left
- * untouched, since their raw IDs carry no displayable information on their
- * own.
+ * Mentions (`<@id>`, `<@!id>`, `<@&id>`, `<@$id>`, `<#id>`, `</command:id>`),
+ * custom emoji (`<:name:id>`, `<a:name:id>`) and timestamps
+ * (`<t:unix:style>`) are left untouched, since their raw IDs carry no
+ * displayable information on their own.
  *
  * Every element in {@link MarkdownElement} is removed by default; pass its
  * name in `options.disable` to leave it untouched instead.

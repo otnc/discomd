@@ -90,18 +90,14 @@ function renderToken(
       return renderLink(token, escapeHtml(token.content));
     case "silent":
       return "";
-    // "list"/"blockQuote" are always consumed as a run by toHTML's main
-    // loop before reaching here (see collectRun) when enabled, and handled
-    // by the generic disabled-passthrough above otherwise.
+    // "list"/"blockQuote" are consumed as a run before reaching here (see collectRun).
     default:
       return escapeHtml(token.raw);
   }
 }
 
-// Groups a run of consecutive same-element tokens, separated only by a
-// single bare newline, so e.g. three `list` lines in a row become one
-// `<ul>` instead of three. A lone token (no neighbors to merge with) is
-// just a run of length one.
+// Groups consecutive same-element tokens separated only by a bare newline,
+// so e.g. three `list` lines in a row become one `<ul>` instead of three.
 function collectRun(
   tokens: Token[],
   start: number,
@@ -130,19 +126,15 @@ function renderList(items: Token[], options: ToHTMLOptions): string {
 }
 
 function renderBlockQuote(items: Token[], options: ToHTMLOptions): string {
-  // `.replace(/\n/g, "<br>")` also covers a >>> quote's own internal line
-  // breaks (that variant is always a single-item run: it already spans the
-  // rest of the message, so there's no adjacent `blockQuote` token to merge
-  // with above).
+  // `.replace(/\n/g, "<br>")` also covers a >>> quote's own internal breaks.
   return `<blockquote>${items
     .map((item) => nested("blockQuote", item.content, options))
     .join("<br>")
     .replace(/\n/g, "<br>")}</blockquote>`;
 }
 
-// Wraps `inner` in the single element `token` denotes. Used when a line
-// stacks several block markers and they have to be re-nested in
-// containment order rather than written order.
+// Wraps `inner` in the element `token` denotes, re-nesting a stacked line
+// (`# > x`) in containment order rather than written order.
 function wrapBlock(token: Token, inner: string): string {
   switch (token.element) {
     case "blockQuote":
@@ -181,8 +173,7 @@ function peelBlocks(
   return { blocks, content };
 }
 
-// Whether the written order of a line's block stack differs from the order
-// they must nest in to be valid HTML.
+// Whether a line's block stack was written out of containment order.
 function needsReorder(blocks: Token[]): boolean {
   return blocks.some(
     (block, i) =>
@@ -226,11 +217,9 @@ export function toHTML(text: string, options: ToHTMLOptions = {}): string {
   while (i < tokens.length) {
     const token = tokens[i];
 
-    // A line can stack several block markers (`# > x`, `> -# x`). They all
-    // apply, but only in containment order, so when the written order
-    // differs the whole stack is re-nested here. Stacks already written
-    // outermost-first fall through to the run-merging paths below, which
-    // keep consecutive quotes/list items in one element.
+    // A line can stack several block markers (`# > x`); when written out of
+    // containment order the whole stack is re-nested here. Stacks already
+    // outermost-first fall through to the run-merging paths below.
     if (isBlockElement(token.element) && isEnabled(token.element)) {
       const { blocks, content } = peelBlocks(token, isEnabled);
       if (needsReorder(blocks)) {
