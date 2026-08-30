@@ -20,15 +20,12 @@
   "author": "otoneko.",
   "type": "module",
   "main": "dist/index.cjs",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.mts",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": {
-        "import": "./dist/index.d.mts",
-        "require": "./dist/index.d.cts"
-      },
-      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     }
   },
@@ -36,14 +33,13 @@
     "dist"
   ],
   "engines": {
-    "node": ">=14"
+    "node": ">=14.18"
   },
   "scripts": {
-    "setup": "node scripts/setup.js",
-    "build": "tsdown",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
+    "build": "tsup",
+    "test": "mocha",
+    "test:watch": "mocha --watch",
+    "test:coverage": "c8 mocha",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -58,16 +54,20 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@sinonjs/fake-timers": "^15.4.0",
     "@types/escape-html": "^1.0.4",
-    "@types/node": "^22.20.1",
-    "@vitest/coverage-v8": "^4.1.10",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^14.18.63",
+    "c8": "^8.0.1",
     "eslint": "^10.8.0",
     "eslint-config-prettier": "^10.1.8",
+    "expect": "^29.7.0",
     "globals": "^17.8.0",
+    "mocha": "^10.8.2",
     "prettier": "^3.9.6",
-    "tsdown": "^0.22.14",
-    "typescript": "^6.0.3",
-    "typescript-eslint": "^8.65.0",
-    "vitest": "^4.1.10"
+    "ts-node": "^10.9.2",
+    "tsup": "^6.7.0",
+    "typescript": "^5.1.6",
+    "typescript-eslint": "^8.65.0"
   }
 }

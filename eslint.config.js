@@ -8,5 +8,6 @@ export default tseslint.config(
   js.configs.recommended,
   tseslint.configs.recommended,
   { languageOptions: { globals: globals.node } },
+  { files: ["src/**/*.test.ts"], languageOptions: { globals: globals.mocha } },
   eslintConfigPrettier
 );

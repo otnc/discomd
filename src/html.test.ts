@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { expect } from "expect";
 import { toHTML } from "./html";
 
 describe("toHTML", () => {

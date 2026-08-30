@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { expect } from "expect";
 import { parse } from "./parse";
 import type { Token } from "./parse";
 

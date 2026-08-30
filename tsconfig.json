@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
-    "target": "ES2024",
+    "target": "ES2020",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "lib": ["ES2024"],
+    "lib": ["ES2020"],
     "strict": true,
     "verbatimModuleSyntax": true,
     "esModuleInterop": true,
@@ -12,7 +12,12 @@
     "noEmit": true,
     "declaration": true,
     "isolatedModules": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "types": ["node", "mocha"]
   },
-  "include": ["src", "tsdown.config.ts", "vitest.config.ts"]
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node"
+  },
+  "include": ["src", "tsup.config.ts"]
 }
