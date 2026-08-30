@@ -35,6 +35,9 @@ Before opening a pull request, make sure the full set passes:
 npm run ci && npm run typecheck && npm run test && npm run build
 ```
 
+`npm run test:coverage` is optional but worth a look if your change adds a
+new branch or edge case — check nothing new went uncovered.
+
 ## Conventions
 
 - **Formatting is Prettier** (default settings, no overrides) and **linting is ESLint** (`eslint.config.js` — `typescript-eslint`'s recommended rules, with `eslint-config-prettier` disabling any ESLint rule that would conflict with Prettier's formatting). Running `npm run check` before you commit handles both.
