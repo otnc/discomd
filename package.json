@@ -20,15 +20,12 @@
   "author": "otoneko.",
   "type": "module",
   "main": "dist/index.cjs",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.mts",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": {
-        "import": "./dist/index.d.mts",
-        "require": "./dist/index.d.cts"
-      },
-      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     }
   },
@@ -39,7 +36,7 @@
     "node": ">=14"
   },
   "scripts": {
-    "build": "tsdown",
+    "build": "tsup",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -64,8 +61,8 @@
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.8.0",
     "prettier": "^3.9.6",
-    "tsdown": "^0.22.14",
-    "typescript": "^6.0.3",
+    "tsup": "^6.7.0",
+    "typescript": "^5.1.6",
     "typescript-eslint": "^8.65.0",
     "vitest": "^4.1.10"
   }
