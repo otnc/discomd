@@ -22,3 +22,18 @@ jobs:
       - run: npm run ci
       - run: npm run typecheck
       - run: npm run test
+
+  # Verifies the engines.node floor (npm run lint is excluded — it needs
+  # Node >= 20.19, see CONTRIBUTING.md).
+  test-min-node:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "14.18"
+          cache: npm
+      - run: npm install
+      - run: npm run typecheck
+      - run: npm run test
+      - run: npm run build
