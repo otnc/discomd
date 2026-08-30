@@ -39,7 +39,6 @@
     "node": ">=14"
   },
   "scripts": {
-    "setup": "node scripts/setup.js",
     "build": "tsdown",
     "test": "vitest run",
     "test:watch": "vitest",
