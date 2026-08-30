@@ -4,7 +4,9 @@ Thanks for your interest in improving discomd! This guide gets you set up and ex
 
 ## Getting set up
 
-You'll need Node.js >= 22. Then install the dependencies:
+You'll need Node.js >= 14.18 to build, test and type-check (`npm run lint`
+needs Node.js >= 20.19 — CI runs it on Node 22/24). Then install the
+dependencies:
 
 ```sh
 npm install
