@@ -12,7 +12,12 @@
     "noEmit": true,
     "declaration": true,
     "isolatedModules": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "types": ["node", "mocha"]
   },
-  "include": ["src", "tsup.config.ts", "vitest.config.ts"]
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node"
+  },
+  "include": ["src", "tsup.config.ts"]
 }

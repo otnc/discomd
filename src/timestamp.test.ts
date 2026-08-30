@@ -1,4 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import * as FakeTimers from "@sinonjs/fake-timers";
+import { expect } from "expect";
 import { formatTimestamp } from "./timestamp";
 
 describe("formatTimestamp", () => {
@@ -45,13 +46,14 @@ describe("formatTimestamp", () => {
   });
 
   describe("style R (relative)", () => {
+    let clock: FakeTimers.Clock;
+
     beforeEach(() => {
-      vi.useFakeTimers();
-      vi.setSystemTime(new Date("2024-01-01T00:00:00Z"));
+      clock = FakeTimers.install({ now: new Date("2024-01-01T00:00:00Z") });
     });
 
     afterEach(() => {
-      vi.useRealTimers();
+      clock.uninstall();
     });
 
     it("formats a relative time", () => {
