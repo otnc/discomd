@@ -31,3 +31,4 @@ closes
 - [ ] Run `npm run check` (lint & format)
 - [ ] Run `npm run test` (functions test)
 - [ ] Run `npm run build` (`dist/`)
+- [ ] (optional) Run `npm run test:coverage` and check nothing new went uncovered
