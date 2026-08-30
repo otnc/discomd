@@ -5,7 +5,8 @@ export default defineConfig({
   format: ["esm", "cjs"],
   dts: true,
   clean: true,
-  // Node >= 22 supports ES2024
-  target: "node22",
+  // Matches engines.node: Node >= 14 covers every feature the source uses
+  // (ES2020 `??`/`matchAll`, `Intl.RelativeTimeFormat`, regex lookbehind).
+  target: "node14",
   platform: "node",
 });

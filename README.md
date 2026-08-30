@@ -66,7 +66,7 @@ toHTML("**bold** ||secret||", { disable: ["spoiler"] });
 
 ## Requirements
 
-- Node.js >= 22
+- Node.js >= 14
 
 ## Features
 
